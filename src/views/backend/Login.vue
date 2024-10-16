@@ -1,16 +1,37 @@
-<script>
-    export default {
-        data() {
-            return {
-                email: '',
-                password: '',
+<script setup>
+    import { ref } from 'vue';
+    import axios from '@/config/axios.js';
+    import csrf from '@/config/csrf.js';
+    import { useRouter } from 'vue-router';
+
+    const email = ref('')
+    const password = ref('');
+    const formErrorMessage = ref('')
+    const router = useRouter();
+
+    const handleLogin = async () => {
+        try {
+            csrf.getCookie()
+            const response = await axios.post('auth/login',{
+                email : email.value,
+                password: password.value
+            })
+            // console.log(response)
+            router.push('/dashboard')
+            
+        } catch (error) {
+            // console.log(error)
+            formErrorMessage.value = {}
+            if(error.response.status == 422) {
+                Object.keys(error.response.data.errors).forEach(key => {
+                formErrorMessage.value[key] = error.response.data.errors[key][0]
+                })
+            } else {
+                formErrorMessage.value.message = error.response.data.message
             }
-        },
-        methods: {
-            handleLogin() {
-                console.log(this.email);
-            }
-        },
+            
+            
+        }
     }
 
 </script>
@@ -32,12 +53,19 @@
                         value="" 
                         class="input-text" 
                         autocomplete="off" >
+                        <div v-if="formErrorMessage.email" class="uk-text-danger">
+                            {{ '* ' + formErrorMessage.email }}
+                        </div>
+                        <div v-if="formErrorMessage.message" class="uk-text-danger">
+                            {{ '* ' + formErrorMessage.message }}
+                        </div>
                     </div>
                     <div class="form-row mb-5">
                         <div class="label">
                             <div class="uk-flex uk-flex-between">
                                 <span>Mật khẩu</span>
-                                <a href="" title="" class="forgot">Quên mật khẩu?</a>
+                                <RouterLink to="/dashboard" class="forgot">Quên mật khẩu</RouterLink>
+                                <!-- <a href="" title="" class="forgot">Quên mật khẩu?</a> -->
                             </div>
                         </div>
                         <input 
@@ -46,6 +74,9 @@
                         value="" 
                         class="input-text" 
                         autocomplete="off" >
+                        <div v-if="formErrorMessage.password" class="uk-text-danger">
+                            {{ '* ' + formErrorMessage.password }}
+                        </div>
                     </div>
                     <div class="form-row mb-20">
                         <div class="uk-flex uk-flex-middle">
